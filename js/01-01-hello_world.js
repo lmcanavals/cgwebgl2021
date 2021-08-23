@@ -45,7 +45,7 @@ function main() {
 
   gl.canvas.width = gl.canvas.clientWidth;
   gl.canvas.height = gl.canvas.clientHeight;
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
   const shader = createProgram(gl);
   const posLoc = gl.getAttribLocation(shader, "aPos");
@@ -68,7 +68,7 @@ function main() {
   gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(posLoc);
 
-  gl.clearColor(1, 1, 1, 1);
+  gl.clearColor(0.1, 0.2, 0.15, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   gl.useProgram(shader);
