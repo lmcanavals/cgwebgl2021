@@ -1,9 +1,9 @@
 "use strict";
 
 const srcVertex = `#version 300 es
-in vec2 aPos;
+in vec4 aPos;
 void main() {
-  gl_Position = vec4(aPos, 0.0, 1.0);
+  gl_Position = aPos;
 }`;
 
 const srcFragment = `#version 300 es
@@ -18,8 +18,8 @@ function loadShader(gl, source, type) {
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-	console.log(`Error compilando shader ${type}`);
-	return null;
+    console.log(`Error compilando shader ${type}`);
+    return null;
   }
   return shader;
 }
@@ -32,9 +32,9 @@ function createProgram(gl) {
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-	console.log(`Error enlazando programa`);
-	gl.deleteProgram(program)
-	return null;
+    console.log(`Error enlazando programa`);
+    gl.deleteProgram(program);
+    return null;
   }
   return program;
 }
@@ -45,32 +45,35 @@ function main() {
 
   gl.canvas.width = gl.canvas.clientWidth;
   gl.canvas.height = gl.canvas.clientHeight;
-    
+	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
   const shader = createProgram(gl);
   const posLoc = gl.getAttribLocation(shader, "aPos");
-  
+
   const vertices = new Float32Array([
-	-0.5, -0.5,
-	 0.2,  0.8,
-	 0.6, -0.35
+    -0.5,
+    -0.5,
+    0.2,
+    0.8,
+    0.6,
+    -0.35,
   ]);
   const vbo = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-  
+
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
-  
+
   gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(posLoc);
-  
+
   gl.clearColor(1, 1, 1, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  
+
   gl.useProgram(shader);
   gl.bindVertexArray(vao);
-  gl.drawArrays(gl.TRIANGLES, 0, 3); 
-  
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
 
 main();
