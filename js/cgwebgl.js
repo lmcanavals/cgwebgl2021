@@ -31,7 +31,7 @@
       this.mouseSensitivity = 0.01;
       this.zoomSensitivity = 0.005;
 
-      this.speed = 2.5;
+      this.speed = 2500.0;
 
       this.firstMouse = true;
       this.lastX = 0;
@@ -47,9 +47,9 @@
         this.lastY = ypos;
         this.firstMouse = false;
       } else {
-        processPov(xpos - lastX, lastY - ypos);
-        lastX = xpos;
-        lastY = ypos;
+        processPov(xpos - this.lastX, this.lastY - ypos);
+        this.lastX = xpos;
+        this.lastY = ypos;
       }
     }
     stopPov() {
@@ -57,36 +57,38 @@
     }
     processKeyboard(direction, deltaTime) {
       const velocity = this.speed * deltaTime;
+			console.log(velocity)
       if (direction === FORWARD) {
-        pos[0] += lookAt[0] * velocity;
-        pos[1] += lookAt[1] * velocity;
-        pos[2] += lookAt[2] * velocity;
+				console.log("confiable");
+        this.pos[0] += this.lookAt[0] * velocity;
+        this.pos[1] += this.lookAt[1] * velocity;
+        this.pos[2] += this.lookAt[2] * velocity;
       } else if (direction === LEFT) {
-        pos[0] -= right[0] * velocity;
-        pos[1] -= right[1] * velocity;
-        pos[2] -= right[2] * velocity;
+        this.pos[0] -= this.right[0] * velocity;
+        this.pos[1] -= this.right[1] * velocity;
+        this.pos[2] -= this.right[2] * velocity;
       } else if (direction === BACKWARD) {
-        pos[0] -= lookAt[0] * velocity;
-        pos[1] -= lookAt[1] * velocity;
-        pos[2] -= lookAt[2] * velocity;
+        this.pos[0] -= this.lookAt[0] * velocity;
+        this.pos[1] -= this.lookAt[1] * velocity;
+        this.pos[2] -= this.lookAt[2] * velocity;
       } else if (direction === RIGHT) {
-        pos[0] += right[0] * velocity;
-        pos[1] += right[1] * velocity;
-        pos[2] += right[2] * velocity;
+        this.pos[0] += this.right[0] * velocity;
+        this.pos[1] += this.right[1] * velocity;
+        this.pos[2] += this.right[2] * velocity;
       }
     }
     processScroll(yoffset) {
       this.zoom -= yoffset * zoomSensitivity;
-      if (zoom < MINZOOM) zoom = MINZOOM;
-      else if (zoom > MAXZOOM) zoom = MAXZOOM;
+      if (this.zoom < MINZOOM) this.zoom = MINZOOM;
+      else if (this.zoom > MAXZOOM) this.zoom = MAXZOOM;
     }
     processPov(xoffset, yoffset, constrainPitch) {
       constrainPitch = constrainPitch === undefined ? true : constrainPitch;
-      yaw += xoffset * mouseSensitivity;
-      pitch += yoffset * mouseSensitivity;
+      this.yaw += xoffset * this.mouseSensitivity;
+      this.pitch += yoffset * this.mouseSensitivity;
       if (constrainPitch) {
-        if (pitch > MAXPITCH) pitch = MAXPITCH;
-        else if (pitch < -MAXPITCH) pitch = -MAXPITCH;
+        if (this.pitch > MAXPITCH) this.pitch = MAXPITCH;
+        else if (this.pitch < -MAXPITCH) this.pitch = -MAXPITCH;
       }
       this.updateVectors();
     }
