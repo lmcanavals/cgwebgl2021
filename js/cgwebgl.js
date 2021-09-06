@@ -151,7 +151,7 @@
     constructor(numVertices, numComps, numIndices) {
       this.numComps = numComps;
       this.vertices = new Float32Array(numVertices * numComps);
-      this.indices = new Uint32Array(numIndices * 3);
+      this.indices = new Uint32Array(numIndices);
       this.iv = 0;
       this.ii = 0;
     }
