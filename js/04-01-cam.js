@@ -5,17 +5,17 @@ const mat4 = glMatrix.mat4;
 
 function createCube(gl, shader, side) {
   const v = new cg.MeshHelper(8, 6, 36);
-  const pos = side;
-  const neg = -side;
-  //            x    y   z   r    g    b
-  v.addVertex([neg, neg, pos, 0.8, 0.2, 0.3]); // ii
-  v.addVertex([pos, neg, pos, 0.3, 0.2, 0.8]); // id
-  v.addVertex([neg, pos, pos, 0.2, 0.8, 0.3]); // si
-  v.addVertex([pos, pos, pos, 0.8, 0.5, 0.1]); // sd
-  v.addVertex([neg, neg, neg, 0.4, 0.6, 0.3]); // ii
-  v.addVertex([pos, neg, neg, 0.2, 0.3, 0.6]); // id
-  v.addVertex([neg, pos, neg, 0.8, 0.6, 0.3]); // si
-  v.addVertex([pos, pos, neg, 0.4, 0.8, 0.1]); // sd
+  const pos = side / 2;
+  const neg = -pos;
+  //            x    y    z    r    g    b
+  v.addVertex([neg, neg, pos, 0.8, 0.2, 0.3]);
+  v.addVertex([pos, neg, pos, 0.3, 0.2, 0.8]);
+  v.addVertex([neg, pos, pos, 0.2, 0.8, 0.3]);
+  v.addVertex([pos, pos, pos, 0.8, 0.5, 0.1]);
+  v.addVertex([neg, neg, neg, 0.4, 0.6, 0.3]);
+  v.addVertex([pos, neg, neg, 0.2, 0.3, 0.6]);
+  v.addVertex([neg, pos, neg, 0.8, 0.6, 0.3]);
+  v.addVertex([pos, pos, neg, 0.4, 0.8, 0.1]);
   v.addRect(0, 1, 2, 3);
   v.addRect(4, 5, 6, 7);
   v.addRect(0, 1, 4, 5);
@@ -77,8 +77,8 @@ async function main() {
 
     mat4.identity(model);
     mat4.identity(projection);
-    //mat4.rotate(model, model, theta, rotationAxis);
-    //mat4.translate(model, model, tfactors);
+    mat4.rotate(model, model, theta, rotationAxis);
+    mat4.translate(model, model, tfactors);
 
     mat4.perspective(projection, cam.zoom, aspect, 0.1, 100);
 
@@ -93,15 +93,10 @@ async function main() {
   requestAnimationFrame(render);
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "w") {
-      cam.processKeyboard(cg.FORWARD, deltaTime);
-    } else if (e.key === "a") {
-      cam.processKeyboard(cg.LEFT, deltaTime);
-    } else if (e.key === "s") {
-      cam.processKeyboard(cg.BACKWARD, deltaTime);
-    } else if (e.key === "d") {
-      cam.processKeyboard(cg.RIGHT, deltaTime);
-    }
+    /**/ if (e.key === "w") cam.processKeyboard(cg.FORWARD, deltaTime);
+    else if (e.key === "a") cam.processKeyboard(cg.LEFT, deltaTime);
+    else if (e.key === "s") cam.processKeyboard(cg.BACKWARD, deltaTime);
+    else if (e.key === "d") cam.processKeyboard(cg.RIGHT, deltaTime);
   });
 }
 

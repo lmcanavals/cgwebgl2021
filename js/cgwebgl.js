@@ -7,6 +7,8 @@
 }(this, function () {
   "use strict";
 
+  const { vec3, mat4 } = glMatrix;
+
   const FORWARD = 0;
   const LEFT = 1;
   const BACKWARD = 2;
@@ -18,11 +20,11 @@
 
   class Cam {
     constructor(pos) {
-      this.pos = glMatrix.vec3.clone(pos);
-      this.up = glMatrix.vec3.clone([0, 1, 0]);
-      this.lookAt = glMatrix.vec3.create();
-      this.right = glMatrix.vec3.create();
-      this.worldUp = glMatrix.vec3.clone([0, 1, 0]);
+      this.pos = vec3.clone(pos);
+      this.up = vec3.clone([0, 1, 0]);
+      this.lookAt = vec3.create();
+      this.right = vec3.create();
+      this.worldUp = vec3.clone([0, 1, 0]);
 
       this.yaw = -Math.PI / 2.0;
       this.pitch = 0.0;
@@ -37,7 +39,11 @@
       this.lastX = 0;
       this.lasty = 0;
 
-      this.viewM4 = glMatrix.mat4.create();
+      this.viewM4 = mat4.create();
+
+      this.sign = [1, -1, -1, 1];
+      this.vec = [this.lookAt, this.right, this.lookAt, this.right];
+      this.temp = vec3.create();
 
       this.updateVectors();
     }
@@ -56,30 +62,19 @@
       this.firstMouse = true;
     }
     processKeyboard(direction, deltaTime) {
-      const velocity = this.speed * deltaTime;
-      if (direction === FORWARD) {
-        this.pos[0] += this.lookAt[0] * velocity;
-        this.pos[1] += this.lookAt[1] * velocity;
-        this.pos[2] += this.lookAt[2] * velocity;
-      } else if (direction === LEFT) {
-        this.pos[0] -= this.right[0] * velocity;
-        this.pos[1] -= this.right[1] * velocity;
-        this.pos[2] -= this.right[2] * velocity;
-      } else if (direction === BACKWARD) {
-        this.pos[0] -= this.lookAt[0] * velocity;
-        this.pos[1] -= this.lookAt[1] * velocity;
-        this.pos[2] -= this.lookAt[2] * velocity;
-      } else if (direction === RIGHT) {
-        this.pos[0] += this.right[0] * velocity;
-        this.pos[1] += this.right[1] * velocity;
-        this.pos[2] += this.right[2] * velocity;
-      }
-			this.updateVectors();
+      const velocity = this.sign[direction] * this.speed * deltaTime;
+      this.pos[0] += this.vec[direction][0] * velocity;
+      this.pos[1] += this.vec[direction][1] * velocity;
+      this.pos[2] += this.vec[direction][2] * velocity;
+      this.updateVectors(); // missing before!
     }
     processScroll(yoffset) {
       this.zoom -= yoffset * zoomSensitivity;
-      if (this.zoom < MINZOOM) this.zoom = MINZOOM;
-      else if (this.zoom > MAXZOOM) this.zoom = MAXZOOM;
+      if (this.zoom < MINZOOM) {
+        this.zoom = MINZOOM;
+      } else if (this.zoom > MAXZOOM) {
+        this.zoom = MAXZOOM;
+      }
     }
     processPov(xoffset, yoffset, constrainPitch) {
       constrainPitch = constrainPitch === undefined ? true : constrainPitch;
@@ -95,15 +90,14 @@
       this.lookAt[0] = Math.cos(this.yaw) * Math.cos(this.pitch);
       this.lookAt[1] = Math.sin(this.pitch);
       this.lookAt[2] = Math.sin(this.yaw) * Math.cos(this.pitch);
-      glMatrix.vec3.normalize(this.lookAt, this.lookAt);
-      glMatrix.vec3.cross(this.right, this.lookAt, this.worldUp);
-      glMatrix.vec3.normalize(this.right, this.right);
-      glMatrix.vec3.cross(this.up, this.right, this.lookAt);
-      glMatrix.vec3.normalize(this.up, this.up);
+      vec3.normalize(this.lookAt, this.lookAt);
+      vec3.cross(this.right, this.lookAt, this.worldUp);
+      vec3.normalize(this.right, this.right);
+      vec3.cross(this.up, this.right, this.lookAt);
+      vec3.normalize(this.up, this.up);
 
-      const temp = glMatrix.vec3.create();
-      glMatrix.vec3.add(temp, this.pos, this.lookAt);
-      glMatrix.mat4.lookAt(this.viewM4, this.pos, temp, this.up);
+      vec3.add(this.temp, this.pos, this.lookAt);
+      mat4.lookAt(this.viewM4, this.pos, this.temp, this.up);
     }
   }
 
