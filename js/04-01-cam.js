@@ -8,14 +8,14 @@ function createCube(gl, shader, side) {
   const pos = side / 2;
   const neg = -pos;
   //            x    y    z    r    g    b
-  v.addVertex([neg, neg, pos, 0.8, 0.2, 0.3]);
-  v.addVertex([pos, neg, pos, 0.3, 0.2, 0.8]);
-  v.addVertex([neg, pos, pos, 0.2, 0.8, 0.3]);
-  v.addVertex([pos, pos, pos, 0.8, 0.5, 0.1]);
-  v.addVertex([neg, neg, neg, 0.4, 0.6, 0.3]);
-  v.addVertex([pos, neg, neg, 0.2, 0.3, 0.6]);
-  v.addVertex([neg, pos, neg, 0.8, 0.6, 0.3]);
-  v.addVertex([pos, pos, neg, 0.4, 0.8, 0.1]);
+  v.addVertex([neg, neg, pos, 0, 0, 1]);
+  v.addVertex([pos, neg, pos, 1, 0, 1]);
+  v.addVertex([neg, pos, pos, 0, 1, 1]);
+  v.addVertex([pos, pos, pos, 1, 1, 1]);
+  v.addVertex([neg, neg, neg, 0, 0, 0]);
+  v.addVertex([pos, neg, neg, 1, 0, 0]);
+  v.addVertex([neg, pos, neg, 0, 1, 0]);
+  v.addVertex([pos, pos, neg, 1, 1, 0]);
   v.addRect(0, 1, 2, 3);
   v.addRect(4, 5, 6, 7);
   v.addRect(0, 1, 4, 5);
