@@ -31,7 +31,7 @@
       this.mouseSensitivity = 0.01;
       this.zoomSensitivity = 0.005;
 
-      this.speed = 2500.0;
+      this.speed = 2.5;
 
       this.firstMouse = true;
       this.lastX = 0;
@@ -57,9 +57,7 @@
     }
     processKeyboard(direction, deltaTime) {
       const velocity = this.speed * deltaTime;
-			console.log(velocity)
       if (direction === FORWARD) {
-				console.log("confiable");
         this.pos[0] += this.lookAt[0] * velocity;
         this.pos[1] += this.lookAt[1] * velocity;
         this.pos[2] += this.lookAt[2] * velocity;
@@ -76,6 +74,7 @@
         this.pos[1] += this.right[1] * velocity;
         this.pos[2] += this.right[2] * velocity;
       }
+			this.updateVectors();
     }
     processScroll(yoffset) {
       this.zoom -= yoffset * zoomSensitivity;

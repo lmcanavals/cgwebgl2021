@@ -42,14 +42,14 @@ async function main() {
   const fragSrc = await fetch("glsl/04-01.frag").then((resp) => resp.text());
   const shader = wu.createProgramFromSources(gl, [vertSrc, fragSrc]);
 
-  const cam = new cg.Cam([0, 0, 6]);
+  const cam = new cg.Cam([0, 0, 4]);
   const mesh = createCube(gl, shader, 0.1);
   const tfactors = new Float32Array([1, 0, 1]);
   const rotationAxis = new Float32Array([0, 1, 0]);
 
   let aspect = 1;
-	let deltaTime = 0;
-	let lastTime = 0;
+  let deltaTime = 0;
+  let lastTime = 0;
   let theta = 0;
 
   const modelLoc = gl.getUniformLocation(shader, "model");
@@ -63,8 +63,8 @@ async function main() {
 
   function render(elapsedTime) {
     elapsedTime *= 1e-3;
-		deltaTime = elapsedTime - lastTime;
-		lastTime = elapsedTime;
+    deltaTime = elapsedTime - lastTime;
+    lastTime = elapsedTime;
 
     if (wu.resizeCanvasToDisplaySize(gl.canvas)) {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -77,8 +77,8 @@ async function main() {
 
     mat4.identity(model);
     mat4.identity(projection);
-    mat4.rotate(model, model, theta, rotationAxis);
-    mat4.translate(model, model, tfactors);
+    //mat4.rotate(model, model, theta, rotationAxis);
+    //mat4.translate(model, model, tfactors);
 
     mat4.perspective(projection, cam.zoom, aspect, 0.1, 100);
 
@@ -92,18 +92,17 @@ async function main() {
   }
   requestAnimationFrame(render);
 
-	document.addEventListener('keydown', e => {
-		if (e.key === "w") {
-			cam.processKeyboard(cg.FORWARD, deltaTime);
-		} else if (e.key === "a") {
-			cam.processKeyboard(cg.LEFT, deltaTime);
-		} else if (e.key === "s") {
-			cam.processKeyboard(cg.BACKWARD, deltaTime);
-		} else if (e.key === "d") {
-			cam.processKeyboard(cg.RIGHT, deltaTime);
-		}
-		console.log(cam.pos);
-	});
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "w") {
+      cam.processKeyboard(cg.FORWARD, deltaTime);
+    } else if (e.key === "a") {
+      cam.processKeyboard(cg.LEFT, deltaTime);
+    } else if (e.key === "s") {
+      cam.processKeyboard(cg.BACKWARD, deltaTime);
+    } else if (e.key === "d") {
+      cam.processKeyboard(cg.RIGHT, deltaTime);
+    }
+  });
 }
 
 main();
