@@ -30,14 +30,14 @@
       this.pitch = 0.0;
       this.zoom = Math.PI / 4.0;
 
-      this.mouseSensitivity = 0.01;
-      this.zoomSensitivity = 0.005;
+      this.mouseSensitivity = 0.001;
+      this.zoomSensitivity = 0.0005;
 
       this.speed = 2.5;
 
-      this.firstMouse = true;
+      this.mouseMove = false;
       this.lastX = 0;
-      this.lasty = 0;
+      this.lastY = 0;
 
       this.viewM4 = mat4.create();
 
@@ -47,13 +47,17 @@
 
       this.updateVectors();
     }
+    startMove(xpos, ypos) {
+      this.lastX = xpos;
+      this.lastY = ypos;
+      this.mouseMove = true;
+    }
+    stopMove() {
+      this.mouseMove = false;
+    }
     movePov(xpos, ypos) {
-      if (this.firstMouse) {
-        this.lastX = xpos;
-        this.lastY = ypos;
-        this.firstMouse = false;
-      } else {
-        processPov(xpos - this.lastX, this.lastY - ypos);
+      if (this.mouseMove) {
+        this.processPov(xpos - this.lastX, this.lastY - ypos);
         this.lastX = xpos;
         this.lastY = ypos;
       }
@@ -69,7 +73,7 @@
       this.updateVectors(); // missing before!
     }
     processScroll(yoffset) {
-      this.zoom -= yoffset * zoomSensitivity;
+      this.zoom -= yoffset * this.zoomSensitivity;
       if (this.zoom < MINZOOM) {
         this.zoom = MINZOOM;
       } else if (this.zoom > MAXZOOM) {

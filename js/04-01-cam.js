@@ -44,7 +44,7 @@ async function main() {
 
   const cam = new cg.Cam([0, 0, 4]);
   const mesh = createCube(gl, shader, 0.1);
-  const tfactors = new Float32Array([1, 0, 1]);
+  //const tfactors = new Float32Array([1, 0, 1]);
   const rotationAxis = new Float32Array([0, 1, 0]);
 
   let aspect = 1;
@@ -78,7 +78,7 @@ async function main() {
     mat4.identity(model);
     mat4.identity(projection);
     mat4.rotate(model, model, theta, rotationAxis);
-    mat4.translate(model, model, tfactors);
+    //mat4.translate(model, model, tfactors);
 
     mat4.perspective(projection, cam.zoom, aspect, 0.1, 100);
 
@@ -98,6 +98,10 @@ async function main() {
     else if (e.key === "s") cam.processKeyboard(cg.BACKWARD, deltaTime);
     else if (e.key === "d") cam.processKeyboard(cg.RIGHT, deltaTime);
   });
+  document.addEventListener("mousemove", (e) => cam.movePov(e.x, e.y));
+  document.addEventListener("mousedown", (e) => cam.startMove(e.x, e.y));
+  document.addEventListener("mouseup", () => cam.stopMove());
+  document.addEventListener("wheel", (e) => cam.processScroll(e.deltaY));
 }
 
 main();
