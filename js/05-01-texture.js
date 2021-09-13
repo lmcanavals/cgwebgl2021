@@ -53,7 +53,7 @@ async function main() {
 
   const cam = new cg.Cam([0, 1.5, 6]);
   const mesh = createCube(gl, shader, 1.0);
-  const rotationAxis = new Float32Array([0, 1, 0]);
+  const rotationAxis = new Float32Array([1, 1, 1]);
 
   let aspect = 1;
   let deltaTime = 0;
