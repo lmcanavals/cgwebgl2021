@@ -1,7 +1,7 @@
 "using strict";
 
 const wu = webglUtils;
-const {mat4, vec3} = glMatrix;
+const { mat4, vec3 } = glMatrix;
 
 function createCube(gl, shader, side) {
   const v = new cg.MeshHelper(16, 5, 36);
@@ -52,7 +52,8 @@ async function main() {
   const shader = wu.createProgramFromSources(gl, [vertSrc, fragSrc]);
 
   const cam = new cg.Cam([0, 1.5, 16]);
-  const mesh = createCube(gl, shader, 1.0); const rotationAxis = new Float32Array([1, 1, 1]);
+  const mesh = createCube(gl, shader, 1.0);
+  const rotationAxis = new Float32Array([1, 1, 1]);
 
   let aspect = 1;
   let deltaTime = 0;
@@ -63,39 +64,40 @@ async function main() {
   const viewLoc = gl.getUniformLocation(shader, "view");
   const projectionLoc = gl.getUniformLocation(shader, "projection");
 
-	const texLoc = gl.getUniformLocation(shader, "texData");
+  const texLoc = gl.getUniformLocation(shader, "texData");
 
-	const texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE,
-		new Uint8Array([0, 0, 255]));
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE,
+    new Uint8Array([0, 0, 255]),
+  );
 
-	const image = new Image();
-	image.src = "textures/mafalda.jpg";
-	image.addEventListener("load", () => {
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.uniform1i(texLoc, 0);
-	});
+  const image = new Image();
+  image.src = "textures/mafalda.jpg";
+  image.addEventListener("load", () => {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(texLoc, 0);
+  });
 
-	const numObjs = 10;
+  const numObjs = 10;
   const positions = new Array(numObjs);
   const speeds = new Array(numObjs);
-	const rndb = (a, b) => Math.random() * (b - a) + a;
-	for (let i = 0; i < numObjs; ++i) {
-		positions[i] = [rndb(-5.0, 5.0), rndb(-5.0, 5.0), rndb(-5.0, 5.0)];
-		speeds[i] = [rndb(-5, 5), rndb(-5, 5), rndb(-5, 5)];
-	}
-	const actualSpeed = vec3.create();
-	const model = mat4.create();
+  const rndb = (a, b) => Math.random() * (b - a) + a;
+  for (let i = 0; i < numObjs; ++i) {
+    positions[i] = [rndb(-5.0, 5.0), rndb(-5.0, 5.0), rndb(-5.0, 5.0)];
+    speeds[i] = [rndb(-5, 5), rndb(-5, 5), rndb(-5, 5)];
+  }
+  const actualSpeed = vec3.create();
+  const model = mat4.create();
   const projection = mat4.create();
 
   gl.enable(gl.DEPTH_TEST);
 
-	let cont = 0;
+  let cont = 0;
   function render(elapsedTime) {
     elapsedTime *= 1e-3;
     deltaTime = elapsedTime - lastTime;
@@ -108,7 +110,6 @@ async function main() {
     gl.clearColor(0.1, 0.1, 0.1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-
     theta = elapsedTime;
 
     mat4.identity(projection);
@@ -119,23 +120,23 @@ async function main() {
     gl.uniformMatrix4fv(viewLoc, false, cam.viewM4);
     gl.uniformMatrix4fv(projectionLoc, false, projection);
 
-		for (const i in positions) {
-			vec3.scale(actualSpeed, speeds[i], deltaTime);
-			vec3.add(positions[i], positions[i], actualSpeed);
-			for (let j = 0; j < 3; ++j) {
-				if (positions[i][j] < -6 || positions[i][j] > 6) {
-					speeds[i][j] *= -1.0;
-				
-			}
-	    mat4.identity(model);
-			mat4.translate(model, model, positions[i]);
-			mat4.rotate(model, model, theta, rotationAxis);
-	    gl.uniformMatrix4fv(modelLoc, false, model);
-	    mesh.draw(shader);
-		}
-		if (cont++ % 100 == 0) {
-			console.log(deltaTime);
-		}
+    for (const i in positions) {
+      vec3.scale(actualSpeed, speeds[i], deltaTime);
+      vec3.add(positions[i], positions[i], actualSpeed);
+      for (let j = 0; j < 3; ++j) {
+        if (positions[i][j] < -6 || positions[i][j] > 6) {
+          speeds[i][j] *= -1.0;
+        }
+      }
+      mat4.identity(model);
+      mat4.translate(model, model, positions[i]);
+      mat4.rotate(model, model, theta, rotationAxis);
+      gl.uniformMatrix4fv(modelLoc, false, model);
+      mesh.draw(shader);
+    }
+    if (cont++ % 100 == 0) {
+      console.log(deltaTime);
+    }
 
     requestAnimationFrame(render);
   }
