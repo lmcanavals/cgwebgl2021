@@ -134,10 +134,10 @@
 
       gl.bindVertexArray(null);
     }
-    draw() {
+    draw(lines=false) {
       this.gl.bindVertexArray(this.vao);
       this.gl.drawElements(
-        this.gl.TRIANGLES,
+        lines === true? this.gl.LINE_STRIP : this.gl.TRIANGLES,
         this.indices.length,
         this.gl.UNSIGNED_INT,
         0,
