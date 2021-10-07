@@ -64,23 +64,33 @@ async function main() {
   const viewLoc = gl.getUniformLocation(shader, "view");
   const projectionLoc = gl.getUniformLocation(shader, "projection");
 
-	const texLoc = gl.getUniformLocation(shader, "texData");
+  const texLoc = gl.getUniformLocation(shader, "texData");
 
-	const texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE,
-		new Uint8Array([0, 0, 255]));
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGB,
+    1,
+    1,
+    0,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array([0, 0, 255]),
+  );
 
-	const image = new Image();
-	image.src = "textures/mafalda.jpg";
-	image.addEventListener("load", () => {
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.activateTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.uniform1i(texLoc, 0);
-	});
+  const image = new Image();
+  image.src = "textures/mafalda.jpg";
+  image.addEventListener("load", () => {
+    gl.useProgram(shader);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(texLoc, 0);
+  });
 
   const model = mat4.create();
   const projection = mat4.create();
@@ -98,7 +108,6 @@ async function main() {
     }
     gl.clearColor(0.1, 0.1, 0.1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
 
     theta = elapsedTime;
 

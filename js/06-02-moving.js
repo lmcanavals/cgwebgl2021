@@ -68,7 +68,15 @@ async function main() {
 
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE,
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGB,
+    1,
+    1,
+    0,
+    gl.RGB,
+    gl.UNSIGNED_BYTE,
     new Uint8Array([0, 0, 255]),
   );
 
@@ -97,7 +105,6 @@ async function main() {
 
   gl.enable(gl.DEPTH_TEST);
 
-  let cont = 0;
   function render(elapsedTime) {
     elapsedTime *= 1e-3;
     deltaTime = elapsedTime - lastTime;
@@ -133,9 +140,6 @@ async function main() {
       mat4.rotate(model, model, theta, rotationAxis);
       gl.uniformMatrix4fv(modelLoc, false, model);
       mesh.draw(shader);
-    }
-    if (cont++ % 100 == 0) {
-      console.log(deltaTime);
     }
 
     requestAnimationFrame(render);

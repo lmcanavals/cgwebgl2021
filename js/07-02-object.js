@@ -9,12 +9,7 @@ function parseObj(text) {
 
   const objVertexData = [objPositions, objTexcoords, objNormals];
   let webglVertexData = [[], [], []];
-  /*function newGeometry() {
-    if (geometry && geometry.data.position.length) {
-      geometry = undefined;
-    }
-    setGeometry();
-  }*/
+
   function addVertex(vert) {
     const ptn = vert.split("/");
     ptn.forEach((objIndexStr, i) => {
@@ -26,6 +21,7 @@ function parseObj(text) {
       webglVertexData[i].push(...objVertexData[i][index]);
     });
   }
+
   const keywords = {
     v(parts) {
       objPositions.push(parts.map(parseFloat));
@@ -48,15 +44,12 @@ function parseObj(text) {
 
   const keywordRE = /(\w*)(?: )*(.*)/;
   const lines = text.split("\n");
+
   for (let lineNo = 0; lineNo < lines.length; ++lineNo) {
     const line = lines[lineNo].trim();
-    if (line === "" || line.startsWith("#")) {
-      continue;
-    }
+    if (line === "" || line.startsWith("#")) continue;
     const m = keywordRE.exec(line);
-    if (!m) {
-      continue;
-    }
+    if (!m) continue;
     const [, keyword, unparsedArgs] = m;
     const parts = line.split(/\s+/).slice(1);
     const handler = keywords[keyword];
@@ -66,6 +59,7 @@ function parseObj(text) {
     }
     handler(parts, unparsedArgs);
   }
+
   return {
     position: webglVertexData[0],
     texcoord: webglVertexData[1],
@@ -84,8 +78,7 @@ async function main() {
 
   const text = await fetch("objects/cubito/cubito.obj")
     .then((resp) => resp.text());
-	const data = parseObj(text);
-	console.log(data);
+  const data = parseObj(text);
 
   const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
   const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
@@ -97,7 +90,7 @@ async function main() {
   let lastTime = 0;
   let theta = 0;
 
-  const texLoc = gl.getUniformLocation(shader, "texData");
+  const texLoc = gl.getUniformLocation(meshProgramInfo.program, "texData");
 
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -116,15 +109,16 @@ async function main() {
   const image = new Image();
   image.src = "textures/mafalda.jpg";
   image.addEventListener("load", () => {
+    gl.useProgram(meshProgramInfo.program);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
     gl.generateMipmap(gl.TEXTURE_2D);
-    gl.activateTexture(gl.TEXTURE0);
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.uniform1i(texLoc, 0);
   });
 
-  const sharedUniforms = {
+  const uniforms = {
     u_world: mat4.create(),
     u_projection: mat4.create(),
     u_view: cam.viewM4,
@@ -147,19 +141,17 @@ async function main() {
 
     theta = elapsedTime;
 
-    mat4.identity(sharedUniforms.u_projection);
-    mat4.perspective(sharedUniforms.u_projection, cam.zoom, aspect, 0.1, 100);
-    mat4.identity(sharedUniforms.u_world);
-    mat4.rotate(
-      sharedUniforms.u_world,
-      sharedUniforms.u_world,
-      theta,
-      rotationAxis,
-    );
+    mat4.identity(uniforms.u_projection);
+    mat4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
+    mat4.identity(uniforms.u_world);
+    mat4.rotate(uniforms.u_world, uniforms.u_world, theta, rotationAxis);
 
     gl.useProgram(meshProgramInfo.program);
+		gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(texLoc, 0);
     gl.bindVertexArray(vao);
-    twgl.setUniforms(meshProgramInfo, sharedUniforms);
+    twgl.setUniforms(meshProgramInfo, uniforms);
     twgl.drawBufferInfo(gl, bufferInfo);
 
     requestAnimationFrame(render);

@@ -73,10 +73,11 @@ async function main() {
 	const image = new Image();
 	image.src = "textures/mafalda.jpg";
 	image.addEventListener("load", () => {
+    gl.useProgram(shader);
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
 		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.activateTexture(gl.TEXTURE0);
+		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 		gl.uniform1i(texLoc, 0);
 	});
