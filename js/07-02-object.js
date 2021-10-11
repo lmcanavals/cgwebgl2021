@@ -1,122 +1,92 @@
 "using strict";
 
-const mat4 = glMatrix.mat4;
-
-function parseObj(text) {
-  const objPositions = [[0, 0, 0]];
-  const objTexcoords = [[0, 0]];
-  const objNormals = [[0, 0, 0]];
-
-  const objVertexData = [objPositions, objTexcoords, objNormals];
-  let webglVertexData = [[], [], []];
-
-  function addVertex(vert) {
-    const ptn = vert.split("/");
-    ptn.forEach((objIndexStr, i) => {
-      if (!objIndexStr) {
-        return;
-      }
-      const objIndex = parseInt(objIndexStr);
-      const index = objIndex + (objIndex >= 0 ? 0 : objVertexData[i].length);
-      webglVertexData[i].push(...objVertexData[i][index]);
-    });
-  }
-
-  const keywords = {
-    v(parts) {
-      objPositions.push(parts.map(parseFloat));
-    },
-    vn(parts) {
-      objNormals.push(parts.map(parseFloat));
-    },
-    vt(parts) {
-      objTexcoords.push(parts.map(parseFloat));
-    },
-    f(parts) {
-      const numTriangles = parts.length - 2;
-      for (let tri = 0; tri < numTriangles; ++tri) {
-        addVertex(parts[0]);
-        addVertex(parts[tri + 1]);
-        addVertex(parts[tri + 2]);
-      }
-    },
-  };
-
-  const keywordRE = /(\w*)(?: )*(.*)/;
-  const lines = text.split("\n");
-
-  for (let lineNo = 0; lineNo < lines.length; ++lineNo) {
-    const line = lines[lineNo].trim();
-    if (line === "" || line.startsWith("#")) continue;
-    const m = keywordRE.exec(line);
-    if (!m) continue;
-    const [, keyword, unparsedArgs] = m;
-    const parts = line.split(/\s+/).slice(1);
-    const handler = keywords[keyword];
-    if (!handler) {
-      console.warn("unhandled keyword", keyword, "at line", lineNo + 1);
-      continue;
-    }
-    handler(parts, unparsedArgs);
-  }
-
-  return {
-    position: webglVertexData[0],
-    texcoord: webglVertexData[1],
-    normal: webglVertexData[2],
-  };
-}
+const { vec3, mat4 } = glMatrix;
 
 async function main() {
   const gl = document.querySelector("#canvitas").getContext("webgl2");
   if (!gl) return undefined !== console.log("couldn't create webgl2 context");
 
+  const vertfn = "glsl/07-02.vert";
+  const fragfn = "glsl/07-02.frag";
+  const objfn = "objects/cubito/cubito.obj";
+
   twgl.setAttributePrefix("a_");
-  const vertSrc = await fetch("glsl/07-02.vert").then((resp) => resp.text());
-  const fragSrc = await fetch("glsl/07-02.frag").then((resp) => resp.text());
+
+  const vertSrc = await fetch(vertfn).then((resp) => resp.text());
+  const fragSrc = await fetch(fragfn).then((resp) => resp.text());
+  const text = await fetch(objfn).then((resp) => resp.text());
+
   const meshProgramInfo = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
+  const obj = cg.parseObj(text);
+  const baseHref = new URL(objfn, window.location.href);
+  const matTexts = await Promise.all(obj.materialLibs.map(async (filename) => {
+    const matHref = new URL(filename, baseHref).href;
+    const response = await fetch(matHref);
+    return await response.text();
+  }));
+  const materials = cg.parseMtl(matTexts.join("\n"));
+  const parts = obj.geometries.map(({ material, data }) => {
+    if (data.color) {
+      if (data.position.length === data.color.length) {
+        data.color = { numComponents: 3, data: data.color };
+      }
+    } else {
+      data.color = { value: [1, 1, 1, 1] };
+    }
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
+    const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
+    return {
+      material: materials[material],
+      bufferInfo,
+      vao,
+    };
+  });
 
-  const text = await fetch("objects/cubito/cubito.obj")
-    .then((resp) => resp.text());
-  const data = parseObj(text);
+  function getExtents(positions) {
+    const min = positions.slice(0, 3);
+    const max = positions.slice(0, 3);
+    for (let i = 3; i < positions.length; i += 3) {
+      for (let j = 0; j < 3; ++j) {
+        const v = positions[i + j];
+        min[j] = Math.min(v, min[j]);
+        max[j] = Math.max(v, min[j]);
+      }
+    }
+    return { min, max };
+  }
 
-  const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
-  const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
+  function getGeometriesExtents(geometries) {
+    return geometries.reduce(({ min, max }, { data }) => {
+      const minMax = getExtents(data.position);
+      return {
+        min: min.map((min, ndx) => Math.min(minMax.min[ndx], min)),
+        max: max.map((max, ndx) => Math.max(minMax.max[ndx], max)),
+      };
+    }, {
+      min: Array(3).fill(Number.POSITIVE_INFINITY),
+      max: Array(3).fill(Number.NEGATIVE_INFINITY),
+    });
+  }
+
+  const extents = getGeometriesExtents(obj.geometries);
+  const range = vec3.create();
+  const temp = vec3.create();
+  vec3.subtract(range, extents.max, extents.min);
+
+  const objOffset = vec3.create();
+  vec3.scale(
+    objOffset,
+    vec3.add(temp, extents.min, vec3.scale(temp, range, 0.5)),
+    -1,
+  );
+
   const cam = new cg.Cam([0, 1.5, 6]);
-  const rotationAxis = new Float32Array([1, 1, 1]);
+  const rotationAxis = new Float32Array([0, 1, 0]);
 
   let aspect = 1;
   let deltaTime = 0;
   let lastTime = 0;
   let theta = 0;
-
-  const texLoc = gl.getUniformLocation(meshProgramInfo.program, "texData");
-
-  const texture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGB,
-    1,
-    1,
-    0,
-    gl.RGB,
-    gl.UNSIGNED_BYTE,
-    new Uint8Array([0, 0, 255]),
-  );
-
-  const image = new Image();
-  image.src = "textures/mafalda.jpg";
-  image.addEventListener("load", () => {
-    gl.useProgram(meshProgramInfo.program);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(texLoc, 0);
-  });
 
   const uniforms = {
     u_world: mat4.create(),
@@ -147,12 +117,13 @@ async function main() {
     mat4.rotate(uniforms.u_world, uniforms.u_world, theta, rotationAxis);
 
     gl.useProgram(meshProgramInfo.program);
-		gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(texLoc, 0);
-    gl.bindVertexArray(vao);
     twgl.setUniforms(meshProgramInfo, uniforms);
-    twgl.drawBufferInfo(gl, bufferInfo);
+
+    for (const { bufferInfo, vao, material } of parts) {
+      gl.bindVertexArray(vao);
+      twgl.setUniforms(meshProgramInfo, { u_world: uniforms.u_world, }, material);
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
 
     requestAnimationFrame(render);
   }
