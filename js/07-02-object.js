@@ -6,8 +6,8 @@ async function main() {
   const gl = document.querySelector("#canvitas").getContext("webgl2");
   if (!gl) return undefined !== console.log("couldn't create webgl2 context");
 
-  const vertfn = "glsl/07-02.vert";
-  const fragfn = "glsl/07-02.frag";
+  const vertfn = "glsl/09-01.vert";
+  const fragfn = "glsl/09-01.frag";
   const objfn = "objects/cubito/cubito.obj";
 
   twgl.setAttributePrefix("a_");

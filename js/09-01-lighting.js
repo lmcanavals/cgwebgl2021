@@ -1,7 +1,7 @@
 "using strict";
 
 const wu = webglUtils;
-const { mat4 } = glMatrix;
+const { mat4, vec3 } = glMatrix;
 
 function createCube(gl, shader, side) {
   const v = new cg.MeshHelper(24, 9, 36);
@@ -60,9 +60,19 @@ async function main() {
   const fragSrc = await fetch("glsl/09-01.frag").then((resp) => resp.text());
   const shader = wu.createProgramFromSources(gl, [vertSrc, fragSrc]);
 
+  const ls_vertSrc = await fetch("glsl/09-01-ls.vert").then((resp) =>
+    resp.text()
+  );
+  const ls_fragSrc = await fetch("glsl/09-01-ls.frag").then((resp) =>
+    resp.text()
+  );
+  const ls_shader = wu.createProgramFromSources(gl, [ls_vertSrc, ls_fragSrc]);
+
   const cam = new cg.Cam([0, 1.5, 4]);
-  const mesh = createCube(gl, shader, 1.0);
+  const cube = createCube(gl, shader, 1.0);
   const rotationAxis = new Float32Array([0, 1, 0]);
+  const lightPosition = new Float32Array([-0.75, 0.0, 0.0]);
+  const lightColor = new Float32Array([1, 1, 1]);
 
   let aspect = 1;
   let deltaTime = 0;
@@ -72,10 +82,16 @@ async function main() {
   const modelLoc = gl.getUniformLocation(shader, "u_world");
   const viewLoc = gl.getUniformLocation(shader, "u_view");
   const projectionLoc = gl.getUniformLocation(shader, "u_projection");
+  const lightPosLoc = gl.getUniformLocation(shader, "u_light_position");
+  const lightColorLoc = gl.getUniformLocation(shader, "u_light_color");
+
+  const ls_modelLoc = gl.getUniformLocation(ls_shader, "u_world");
+  const ls_viewLoc = gl.getUniformLocation(ls_shader, "u_view");
+  const ls_projectionLoc = gl.getUniformLocation(ls_shader, "u_projection");
 
   const model = mat4.create();
   const projection = mat4.create();
-	let wireframe = false;
+  let wireframe = false;
 
   gl.enable(gl.DEPTH_TEST);
 
@@ -92,6 +108,9 @@ async function main() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     theta = elapsedTime;
+    mat4.identity(model);
+    mat4.rotate(model, model, theta, rotationAxis);
+    vec3.transformMat3(lightPosition, [1, 0, 0], model);
 
     mat4.identity(projection);
 
@@ -100,11 +119,21 @@ async function main() {
     gl.useProgram(shader);
     gl.uniformMatrix4fv(viewLoc, false, cam.viewM4);
     gl.uniformMatrix4fv(projectionLoc, false, projection);
+    gl.uniform3fv(lightPosLoc, lightPosition);
+    gl.uniform3fv(lightColorLoc, lightColor);
 
     mat4.identity(model);
-    mat4.rotate(model, model, theta, rotationAxis);
     gl.uniformMatrix4fv(modelLoc, false, model);
-    mesh.draw(wireframe);
+    cube.draw(wireframe);
+
+    gl.useProgram(ls_shader);
+    gl.uniformMatrix4fv(ls_projectionLoc, false, projection);
+    gl.uniformMatrix4fv(ls_viewLoc, false, cam.viewM4);
+    mat4.identity(model);
+    mat4.translate(model, model, lightPosition);
+    mat4.scale(model, model, [0.1, 0.1, 0.1]);
+    gl.uniformMatrix4fv(ls_modelLoc, false, model);
+    cube.draw(wireframe);
 
     requestAnimationFrame(render);
   }
