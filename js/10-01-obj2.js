@@ -1,0 +1,143 @@
+"using strict";
+
+const { vec3, vec4, mat4 } = glMatrix;
+
+async function main() {
+  const gl = document.querySelector("#canvitas").getContext("webgl2");
+  if (!gl) return undefined !== console.log("couldn't create webgl2 context");
+
+  const vertfn = "glsl/10-01.vert";
+  const fragfn = "glsl/10-01.frag";
+  const objfn = "objects/monito/monito.obj";
+  const lsvertfn = "glsl/09-01-ls.vert";
+  const lsfragfn = "glsl/09-01-ls.frag";
+  const lsfn = "objects/cubito/cubito.obj";
+
+  twgl.setAttributePrefix("a_");
+
+  const vertSrc = await fetch(vertfn).then((resp) => resp.text());
+  const fragSrc = await fetch(fragfn).then((resp) => resp.text());
+  const objText = await fetch(objfn).then((resp) => resp.text());
+  const lsvertSrc = await fetch(lsvertfn).then((resp) => resp.text());
+  const lsfragSrc = await fetch(lsfragfn).then((resp) => resp.text());
+  const lsText = await fetch(lsfn).then((resp) => resp.text());
+
+  const meshProgramInfo = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
+  const lsProgramInfo = twgl.createProgramInfo(gl, [lsvertSrc, lsfragSrc]);
+
+  const obj = cg.parseObj(objText);
+  const lsCube = cg.parseObj(lsText);
+
+  const baseHref = new URL(objfn, window.location.href);
+  const matTexts = await Promise.all(obj.materialLibs.map(async (filename) => {
+    const matHref = new URL(filename, baseHref).href;
+    const response = await fetch(matHref);
+    return await response.text();
+  }));
+  const materials = cg.parseMtl(matTexts.join("\n"));
+  const parts = obj.geometries.map(({ material, data }) => {
+    if (data.color) {
+      if (data.position.length === data.color.length) {
+        data.color = { numComponents: 3, data: data.color };
+      }
+    } else {
+      data.color = { value: [1, 1, 1, 1] };
+    }
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
+    const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
+    return {
+      material: materials[material],
+      bufferInfo,
+      vao,
+    };
+  });
+  const lsParts = lsCube.geometries.map(({ data }) => {
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
+    const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
+    return {
+      bufferInfo,
+      vao,
+    };
+  });
+
+  const cam = new cg.Cam([0, 1.5, 6]);
+  const rotationAxis = new Float32Array([0, 1, 0]);
+
+  let aspect = 16.0 / 9.0;
+  let deltaTime = 0;
+  let lastTime = 0;
+  let theta = 0;
+
+  const uniforms = {
+    u_world: mat4.create(),
+    u_projection: mat4.create(),
+    u_view: cam.viewM4,
+    u_light_position: vec3.create(),
+    u_light_color: vec3.fromValues(1, 1, 1),
+  };
+  const origin = vec4.fromValues(0, 0, 0);
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.CULL_FACE);
+
+  function render(elapsedTime) {
+    elapsedTime *= 1e-3;
+    deltaTime = elapsedTime - lastTime;
+    lastTime = elapsedTime;
+
+    if (twgl.resizeCanvasToDisplaySize(gl.canvas)) {
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      aspect = gl.canvas.width / gl.canvas.height;
+    }
+    gl.clearColor(0.1, 0.1, 0.1, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    theta = elapsedTime;
+    mat4.identity(uniforms.u_world);
+		mat4.rotate(uniforms.u_world, uniforms.u_world, theta, rotationAxis);
+    mat4.translate(uniforms.u_world, uniforms.u_world, [1.75, 0, 0]);
+    vec3.transformMat4(uniforms.u_light_position, origin, uniforms.u_world);
+
+    mat4.identity(uniforms.u_projection);
+    mat4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
+    mat4.identity(uniforms.u_world);
+
+    gl.useProgram(meshProgramInfo.program);
+    twgl.setUniforms(meshProgramInfo, uniforms);
+
+    for (const { bufferInfo, vao } of parts) {
+      gl.bindVertexArray(vao);
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
+
+    mat4.identity(uniforms.u_world);
+    mat4.translate(
+      uniforms.u_world,
+      uniforms.u_world,
+      uniforms.u_light_position,
+    );
+    mat4.scale(uniforms.u_world, uniforms.u_world, [0.05, 0.05, 0.05]);
+    gl.useProgram(lsProgramInfo.program);
+    twgl.setUniforms(lsProgramInfo, uniforms);
+    for (const { bufferInfo, vao } of lsParts) {
+      gl.bindVertexArray(vao);
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
+
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  document.addEventListener("keydown", (e) => {
+    /**/ if (e.key === "w") cam.processKeyboard(cg.FORWARD, deltaTime);
+    else if (e.key === "a") cam.processKeyboard(cg.LEFT, deltaTime);
+    else if (e.key === "s") cam.processKeyboard(cg.BACKWARD, deltaTime);
+    else if (e.key === "d") cam.processKeyboard(cg.RIGHT, deltaTime);
+  });
+  document.addEventListener("mousemove", (e) => cam.movePov(e.x, e.y));
+  document.addEventListener("mousedown", (e) => cam.startMove(e.x, e.y));
+  document.addEventListener("mouseup", () => cam.stopMove());
+  document.addEventListener("wheel", (e) => cam.processScroll(e.deltaY));
+}
+
+main();

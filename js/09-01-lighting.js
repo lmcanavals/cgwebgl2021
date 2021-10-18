@@ -56,17 +56,13 @@ async function main() {
   const gl = document.querySelector("#canvitas").getContext("webgl2");
   if (!gl) return undefined !== console.log("couldn't create webgl2 context");
 
-  const vertSrc = await fetch("glsl/09-01.vert").then((resp) => resp.text());
-  const fragSrc = await fetch("glsl/09-01.frag").then((resp) => resp.text());
-  const shader = wu.createProgramFromSources(gl, [vertSrc, fragSrc]);
+  const vSrc = await fetch("glsl/09-01.vert").then((resp) => resp.text());
+  const fSrc = await fetch("glsl/09-01.frag").then((resp) => resp.text());
+  const shader = wu.createProgramFromSources(gl, [vSrc, fSrc]);
 
-  const ls_vertSrc = await fetch("glsl/09-01-ls.vert").then((resp) =>
-    resp.text()
-  );
-  const ls_fragSrc = await fetch("glsl/09-01-ls.frag").then((resp) =>
-    resp.text()
-  );
-  const ls_shader = wu.createProgramFromSources(gl, [ls_vertSrc, ls_fragSrc]);
+  const lsvSrc = await fetch("glsl/09-01-ls.vert").then((resp) => resp.text());
+  const lsfSrc = await fetch("glsl/09-01-ls.frag").then((resp) => resp.text());
+  const ls_shader = wu.createProgramFromSources(gl, [lsvSrc, lsfSrc]);
 
   const cam = new cg.Cam([0, 1.5, 4]);
   const cube = createCube(gl, shader, 1.0);
