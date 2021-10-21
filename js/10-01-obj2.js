@@ -1,12 +1,16 @@
 "using strict";
 
-const { vec3, vec4, mat4 } = glMatrix;
+import * as cg from "./cg.js";
+import * as v3 from "./glmjs/vec3.js";
+import * as v4 from "./glmjs/vec4.js";
+import * as m4 from "./glmjs/mat4.js";
+import * as twgl from "./twgl-full.module.js";
 
 async function main() {
   const gl = document.querySelector("#canvitas").getContext("webgl2");
   if (!gl) return undefined !== console.log("couldn't create webgl2 context");
 
-  twgl.setAttributePrefix("a_");
+  twgl.setDefaults({ attribPrefix: "a_" });
 
   // Loading monito
   const vertfn = "glsl/10-01.vert";
@@ -76,13 +80,13 @@ async function main() {
   let theta = 0;
 
   const uniforms = {
-    u_world: mat4.create(),
-    u_projection: mat4.create(),
+    u_world: m4.create(),
+    u_projection: m4.create(),
     u_view: cam.viewM4,
-    u_light_position: vec3.create(),
-    u_light_color: vec3.fromValues(1, 1, 1),
+    u_light_position: v3.create(),
+    u_light_color: v3.fromValues(1, 1, 1),
   };
-  const origin = vec4.fromValues(0, 0, 0);
+  const origin = v4.fromValues(0, 0, 0);
 
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
@@ -104,15 +108,15 @@ async function main() {
 
     // some logic to move the light around
     theta = elapsedTime;
-    mat4.identity(uniforms.u_world);
-    mat4.rotate(uniforms.u_world, uniforms.u_world, theta, rotationAxis);
-    mat4.translate(uniforms.u_world, uniforms.u_world, [1.75, 0, 0]);
-    vec3.transformMat4(uniforms.u_light_position, origin, uniforms.u_world);
+    m4.identity(uniforms.u_world);
+    m4.rotate(uniforms.u_world, uniforms.u_world, theta, rotationAxis);
+    m4.translate(uniforms.u_world, uniforms.u_world, [1.75, 0, 0]);
+    v3.transformMat4(uniforms.u_light_position, origin, uniforms.u_world);
 
     // coordinate system adjustments
-    mat4.identity(uniforms.u_projection);
-    mat4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
-    mat4.identity(uniforms.u_world);
+    m4.identity(uniforms.u_projection);
+    m4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
+    m4.identity(uniforms.u_world);
 
     // drawing monito
     gl.useProgram(meshProgramInfo.program);
@@ -124,13 +128,13 @@ async function main() {
     }
 
     // logic to move the visual representation of the light source
-    mat4.identity(uniforms.u_world);
-    mat4.translate(
+    m4.identity(uniforms.u_world);
+    m4.translate(
       uniforms.u_world,
       uniforms.u_world,
       uniforms.u_light_position,
     );
-    mat4.scale(uniforms.u_world, uniforms.u_world, [0.05, 0.05, 0.05]);
+    m4.scale(uniforms.u_world, uniforms.u_world, [0.05, 0.05, 0.05]);
 
     // drawing the light source cube
     gl.useProgram(lsProgramInfo.program);
