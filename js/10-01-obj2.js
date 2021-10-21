@@ -15,7 +15,7 @@ async function main() {
   // Loading monito
   const vertfn = "glsl/10-01.vert";
   const fragfn = "glsl/10-01.frag";
-  const objfn = "objects/monito/monito.obj";
+  const objfn = "objects/blueape/blueape.obj";//"objects/monito/monito.obj";
 
   const vertSrc = await fetch(vertfn).then((resp) => resp.text());
   const fragSrc = await fetch(fragfn).then((resp) => resp.text());
@@ -32,6 +32,30 @@ async function main() {
     return await response.text();
   }));
   const materials = cg.parseMtl(matTexts.join("\n"));
+  const textures = {
+    defaultWhite: twgl.createTexture(gl, { src: [255, 255, 255, 255] }),
+  };
+  for (const material of Object.values(materials)) {
+    Object.entries(material)
+      .filter(([key]) => key.endsWith("Map"))
+      .forEach(([key, filename]) => {
+				let texture = textures[filename];
+				if (!texture) {
+					const textureHref = new URL(filename, baseHref).href;
+					texture = twgl.createTexture(gl, {src: textureHref, flipY: true});
+					textures[filename] = texture;
+				}
+				material[key] = texture;
+      });
+  }
+	const defaultMaterial = {
+		diffuse: [1, 1, 1],
+		diffuseMap: textures.defaultWhite,
+		ambient: [0, 0, 0],
+		specular: [1, 1, 1],
+		shininess: 400,
+		opacity: 1,
+	};
   const parts = obj.geometries.map(({ material, data }) => {
     if (data.color) {
       if (data.position.length === data.color.length) {
@@ -43,7 +67,10 @@ async function main() {
     const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
     const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
     return {
-      material: materials[material],
+      material: {
+				...defaultMaterial,
+				...materials[material],
+			},
       bufferInfo,
       vao,
     };
@@ -87,6 +114,7 @@ async function main() {
     u_light_color: v3.fromValues(1, 1, 1),
   };
   const origin = v4.fromValues(0, 0, 0);
+	const u_world = uniforms.u_world;
 
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
@@ -117,13 +145,15 @@ async function main() {
     m4.identity(uniforms.u_projection);
     m4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
     m4.identity(uniforms.u_world);
+		m4.scale(uniforms.u_world, uniforms.u_world, [10, 10, 10]);
 
     // drawing monito
     gl.useProgram(meshProgramInfo.program);
     twgl.setUniforms(meshProgramInfo, uniforms);
 
-    for (const { bufferInfo, vao } of parts) {
+    for (const { bufferInfo, vao, material } of parts) {
       gl.bindVertexArray(vao);
+			twgl.setUniforms(meshProgramInfo, {u_world}, material);
       twgl.drawBufferInfo(gl, bufferInfo);
     }
 

@@ -241,17 +241,17 @@ function parseObj(text) {
       }
     },
     s: noop,
-    mtllib: (_, unparsedArgs) => materialLibs.push(unparsedArgs),
-    usemtl(_, unparsedArgs) {
-      material = unparsedArgs;
+    mtllib: (_, uargs) => materialLibs.push(uargs),
+    usemtl(_, uargs) {
+      material = uargs;
       newGeometry();
     },
     g(parts) {
       groups = parts;
       newGeometry();
     },
-    o(_, unparsedArgs) {
-      object = unparsedArgs;
+    o(_, uargs) {
+      object = uargs;
       newGeometry();
     },
   };
@@ -264,14 +264,14 @@ function parseObj(text) {
     if (line === "" || line.startsWith("#")) continue;
     const m = keywordRE.exec(line);
     if (!m) continue;
-    const [, keyword, unparsedArgs] = m;
+    const [, keyword, uargs] = m;
     const parts = line.split(/\s+/).slice(1);
     const handler = keywords[keyword];
     if (!handler) {
       console.warn("unhandled keyword:", keyword);
       continue;
     }
-    handler(parts, unparsedArgs);
+    handler(parts, uargs);
   }
 
   for (const geometry of geometries) {
@@ -286,8 +286,8 @@ function parseObj(text) {
   };
 }
 
-function parseMapArgs(unparsedArgs) {
-  return unparsedArgs;
+function parseMapArgs(uargs) {
+  return uargs;
 }
 
 function parseMtl(text) {
@@ -295,19 +295,18 @@ function parseMtl(text) {
   let material;
 
   const keywords = {
-    newmtl: (_, unparsedArgs) => {
-      material = {};
-      materials[unparsedArgs] = material;
-    },
+    newmtl: (_, uargs) => materials[uargs] = material = {},
     Ns: (parts) => material.shininess = parseFloat(parts[0]),
     Ka: (parts) => material.ambient = parts.map(parseFloat),
     Kd: (parts) => material.diffuse = parts.map(parseFloat),
     Ks: (parts) => material.specular = parts.map(parseFloat),
     Ke: (parts) => material.emissive = parts.map(parseFloat),
+    map_Kd: (_, uargs) => material.diffuseMap = parseMapArgs(uargs),
+    map_Ns: (_, uargs) => material.diffuseMap = parseMapArgs(uargs),
+    map_Bump: (_, uargs) => material.diffuseMap = parseMapArgs(uargs),
     Ni: (parts) => material.opticalDensity = parseFloat(parts[0]),
     d: (parts) => material.opacity = parseFloat(parts[0]),
     illum: (parts) => material.illum = parseInt(parts[0]),
-    map_Kd: () => {},
   };
   const keywordRE = /(\w*)(?: )*(.*)/;
   const lines = text.split("\n");
@@ -316,14 +315,14 @@ function parseMtl(text) {
     if (line === "" || line.startsWith("#")) continue;
     const m = keywordRE.exec(line);
     if (!m) continue;
-    const [, keyword, unparsedArgs] = m;
+    const [, keyword, uargs] = m;
     const parts = line.split(/\s+/).slice(1);
     const handler = keywords[keyword];
     if (!handler) {
       console.warn(`unhandled keyword (${lineNo}): ${keyword}`);
       continue;
     }
-    handler(parts, unparsedArgs);
+    handler(parts, uargs);
   }
 
   return materials;
@@ -335,7 +334,6 @@ export {
   LEFT,
   Mesh,
   MeshHelper,
-  parseMapArgs,
   parseMtl,
   parseObj,
   RIGHT,
