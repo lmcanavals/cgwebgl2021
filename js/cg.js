@@ -2,6 +2,7 @@
 
 import * as vec3 from "./glmjs/vec3.js";
 import * as mat4 from "./glmjs/mat4.js";
+import * as twgl from "./twgl-full.module.js";
 
 const FORWARD = 0;
 const LEFT = 1;
@@ -327,14 +328,77 @@ function parseMtl(text) {
 
   return materials;
 }
+
+async function fetchText(fn) {
+  const resp = await fetch(fn);
+  return await resp.text();
+}
+
+async function loadObj(fn, gl, meshProgramInfo) {
+  const objText = await fetchText(fn);
+  const obj = parseObj(objText);
+
+  const baseHref = new URL(fn, window.location.href);
+  const matTexts = await Promise.all(obj.materialLibs.map(async (filename) => {
+    const matHref = new URL(filename, baseHref).href;
+    const response = await fetch(matHref);
+    return await response.text();
+  }));
+  const materials = parseMtl(matTexts.join("\n"));
+  const textures = {
+    defaultWhite: twgl.createTexture(gl, { src: [255, 255, 255, 255] }),
+  };
+  for (const material of Object.values(materials)) {
+    Object.entries(material)
+      .filter(([key]) => key.endsWith("Map"))
+      .forEach(([key, filename]) => {
+        let texture = textures[filename];
+        if (!texture) {
+          const textureHref = new URL(filename, baseHref).href;
+          texture = twgl.createTexture(gl, { src: textureHref, flipY: true });
+          textures[filename] = texture;
+        }
+        material[key] = texture;
+      });
+  }
+  const defaultMaterial = {
+    diffuse: [1, 1, 1],
+    diffuseMap: textures.defaultWhite,
+    ambient: [0, 0, 0],
+    specular: [1, 1, 1],
+    shininess: 400,
+    opacity: 1,
+  };
+  const parts = obj.geometries.map(({ material, data }) => {
+    if (data.color) {
+      if (data.position.length === data.color.length) {
+        data.color = { numComponents: 3, data: data.color };
+      }
+    } else {
+      data.color = { value: [1, 1, 1, 1] };
+    }
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
+    const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
+    return {
+      material: {
+        ...defaultMaterial,
+        ...materials[material],
+      },
+      bufferInfo,
+      vao,
+    };
+  });
+  return parts;
+}
+
 export {
   BACKWARD,
   Cam,
+  fetchText,
   FORWARD,
   LEFT,
+  loadObj,
   Mesh,
   MeshHelper,
-  parseMtl,
-  parseObj,
   RIGHT,
 };

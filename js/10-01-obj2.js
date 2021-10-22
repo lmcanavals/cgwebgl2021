@@ -13,91 +13,18 @@ async function main() {
   twgl.setDefaults({ attribPrefix: "a_" });
 
   // Loading monito
-  const vertfn = "glsl/10-01.vert";
-  const fragfn = "glsl/10-01.frag";
-  const objfn = "objects/blueape/blueape.obj";//"objects/monito/monito.obj";
-
-  const vertSrc = await fetch(vertfn).then((resp) => resp.text());
-  const fragSrc = await fetch(fragfn).then((resp) => resp.text());
-  const objText = await fetch(objfn).then((resp) => resp.text());
-
-  const meshProgramInfo = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
-
-  const obj = cg.parseObj(objText);
-
-  const baseHref = new URL(objfn, window.location.href);
-  const matTexts = await Promise.all(obj.materialLibs.map(async (filename) => {
-    const matHref = new URL(filename, baseHref).href;
-    const response = await fetch(matHref);
-    return await response.text();
-  }));
-  const materials = cg.parseMtl(matTexts.join("\n"));
-  const textures = {
-    defaultWhite: twgl.createTexture(gl, { src: [255, 255, 255, 255] }),
-  };
-  for (const material of Object.values(materials)) {
-    Object.entries(material)
-      .filter(([key]) => key.endsWith("Map"))
-      .forEach(([key, filename]) => {
-				let texture = textures[filename];
-				if (!texture) {
-					const textureHref = new URL(filename, baseHref).href;
-					texture = twgl.createTexture(gl, {src: textureHref, flipY: true});
-					textures[filename] = texture;
-				}
-				material[key] = texture;
-      });
-  }
-	const defaultMaterial = {
-		diffuse: [1, 1, 1],
-		diffuseMap: textures.defaultWhite,
-		ambient: [0, 0, 0],
-		specular: [1, 1, 1],
-		shininess: 400,
-		opacity: 1,
-	};
-  const parts = obj.geometries.map(({ material, data }) => {
-    if (data.color) {
-      if (data.position.length === data.color.length) {
-        data.color = { numComponents: 3, data: data.color };
-      }
-    } else {
-      data.color = { value: [1, 1, 1, 1] };
-    }
-    const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
-    const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
-    return {
-      material: {
-				...defaultMaterial,
-				...materials[material],
-			},
-      bufferInfo,
-      vao,
-    };
-  });
+  const vertSrc = await cg.fetchText("glsl/10-01.vert");
+  const fragSrc = await cg.fetchText("glsl/10-01.frag");
+  const apePrgInf = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
+  const ape = await cg.loadObj("objects/monito/monito.obj", gl, apePrgInf);
 
   // loading light source cube
-  const lsvertfn = "glsl/09-01-ls.vert";
-  const lsfragfn = "glsl/09-01-ls.frag";
-  const lsfn = "objects/cubito/cubito.obj";
+  const lsvertSrc = await cg.fetchText("glsl/09-01-ls.vert");
+  const lsfragSrc = await cg.fetchText("glsl/09-01-ls.frag");
+  const lsPrgInf = twgl.createProgramInfo(gl, [lsvertSrc, lsfragSrc]);
+  const lightbulb = await cg.loadObj("objects/cubito/cubito.obj", gl, lsPrgInf);
 
-  const lsvertSrc = await fetch(lsvertfn).then((resp) => resp.text());
-  const lsfragSrc = await fetch(lsfragfn).then((resp) => resp.text());
-  const lsText = await fetch(lsfn).then((resp) => resp.text());
-
-  const lsProgramInfo = twgl.createProgramInfo(gl, [lsvertSrc, lsfragSrc]);
-
-  const lsCube = cg.parseObj(lsText);
-  const lsParts = lsCube.geometries.map(({ data }) => {
-    const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
-    const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
-    return {
-      bufferInfo,
-      vao,
-    };
-  });
-
-  // General stuff setup
+	// General stuff setup
   const cam = new cg.Cam([0, 1.5, 6]);
   const rotationAxis = new Float32Array([0, 1, 0]);
 
@@ -114,7 +41,6 @@ async function main() {
     u_light_color: v3.fromValues(1, 1, 1),
   };
   const origin = v4.fromValues(0, 0, 0);
-	const u_world = uniforms.u_world;
 
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
@@ -145,15 +71,15 @@ async function main() {
     m4.identity(uniforms.u_projection);
     m4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
     m4.identity(uniforms.u_world);
-		m4.scale(uniforms.u_world, uniforms.u_world, [10, 10, 10]);
+    //m4.scale(uniforms.u_world, uniforms.u_world, [10, 10, 10]);
 
     // drawing monito
-    gl.useProgram(meshProgramInfo.program);
-    twgl.setUniforms(meshProgramInfo, uniforms);
+    gl.useProgram(apePrgInf.program);
+    twgl.setUniforms(apePrgInf, uniforms);
 
-    for (const { bufferInfo, vao, material } of parts) {
+    for (const { bufferInfo, vao, material } of ape) {
       gl.bindVertexArray(vao);
-			twgl.setUniforms(meshProgramInfo, {u_world}, material);
+      twgl.setUniforms(apePrgInf, {}, material);
       twgl.drawBufferInfo(gl, bufferInfo);
     }
 
@@ -167,10 +93,10 @@ async function main() {
     m4.scale(uniforms.u_world, uniforms.u_world, [0.05, 0.05, 0.05]);
 
     // drawing the light source cube
-    gl.useProgram(lsProgramInfo.program);
-    twgl.setUniforms(lsProgramInfo, uniforms);
+    gl.useProgram(lsPrgInf.program);
+    twgl.setUniforms(lsPrgInf, uniforms);
 
-    for (const { bufferInfo, vao } of lsParts) {
+    for (const { bufferInfo, vao } of lightbulb) {
       gl.bindVertexArray(vao);
       twgl.drawBufferInfo(gl, bufferInfo);
     }
