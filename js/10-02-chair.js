@@ -1,5 +1,12 @@
 "using strict";
 
+/*
+ * usamos: "Chair" (https://skfb.ly/6RJJH)
+ * by haytonm
+ * is licensed under Creative Commons Attribution
+ * (http://creativecommons.org/licenses/by/4.0/).
+ **/
+
 import * as cg from "./cg.js";
 import * as v3 from "./glmjs/vec3.js";
 import * as v4 from "./glmjs/vec4.js";
@@ -15,8 +22,8 @@ async function main() {
   // Loading monito
   const vertSrc = await cg.fetchText("glsl/10-01.vert");
   const fragSrc = await cg.fetchText("glsl/10-01.frag");
-  const apePrgInf = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
-  const ape = await cg.loadObj("objects/monito/monito.obj", gl, apePrgInf);
+  const chairPrgInf = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
+  const chair = await cg.loadObj("objects/Chair/Chair.obj", gl, chairPrgInf);
 
   // loading light source cube
   const lsvertSrc = await cg.fetchText("glsl/09-01-ls.vert");
@@ -40,8 +47,8 @@ async function main() {
     u_light_position: v3.create(),
     u_light_color: v3.fromValues(1, 1, 1),
   };
-	const initial_light_pos = v3.fromValues(1.75, 0, 0);
-  const origin = v4.fromValues(0, 0, 0);
+  const initial_light_pos = v3.fromValues(1.74, 0, 0);
+  const origin = v4.fromValues(0, 0, 0, 0);
 
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
@@ -72,15 +79,15 @@ async function main() {
     m4.identity(uniforms.u_projection);
     m4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
     m4.identity(uniforms.u_world);
-    //m4.scale(uniforms.u_world, uniforms.u_world, [10, 10, 10]);
+    m4.scale(uniforms.u_world, uniforms.u_world, [0.2, 0.2, 0.2]);
 
     // drawing monito
-    gl.useProgram(apePrgInf.program);
-    twgl.setUniforms(apePrgInf, uniforms);
+    gl.useProgram(chairPrgInf.program);
+    twgl.setUniforms(chairPrgInf, uniforms);
 
-    for (const { bufferInfo, vao, material } of ape) {
+    for (const { bufferInfo, vao, material } of chair) {
       gl.bindVertexArray(vao);
-      twgl.setUniforms(apePrgInf, {}, material);
+      twgl.setUniforms(chairPrgInf, {}, material);
       twgl.drawBufferInfo(gl, bufferInfo);
     }
 

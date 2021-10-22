@@ -13,10 +13,10 @@ async function main() {
   twgl.setDefaults({ attribPrefix: "a_" });
 
   // Loading monito
-  const vertSrc = await cg.fetchText("glsl/10-01.vert");
-  const fragSrc = await cg.fetchText("glsl/10-01.frag");
+  const vertSrc = await cg.fetchText("glsl/10-03.vert");
+  const fragSrc = await cg.fetchText("glsl/10-03.frag");
   const apePrgInf = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
-  const ape = await cg.loadObj("objects/monito/monito.obj", gl, apePrgInf);
+  const ape = await cg.loadObj("objects/cubito/cubito.obj", gl, apePrgInf);
 
   // loading light source cube
   const lsvertSrc = await cg.fetchText("glsl/09-01-ls.vert");
