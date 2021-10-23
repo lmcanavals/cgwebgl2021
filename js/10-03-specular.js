@@ -16,7 +16,7 @@ async function main() {
   const vertSrc = await cg.fetchText("glsl/10-03.vert");
   const fragSrc = await cg.fetchText("glsl/10-03.frag");
   const apePrgInf = twgl.createProgramInfo(gl, [vertSrc, fragSrc]);
-  const ape = await cg.loadObj("objects/cubito/cubito.obj", gl, apePrgInf);
+  const ape = await cg.loadObj("objects/blueape/blueape.obj", gl, apePrgInf);
 
   // loading light source cube
   const lsvertSrc = await cg.fetchText("glsl/09-01-ls.vert");
@@ -39,8 +39,13 @@ async function main() {
     u_view: cam.viewM4,
     u_light_position: v3.create(),
     u_light_color: v3.fromValues(1, 1, 1),
+    u_view_position: cam.pos,
   };
-	const initial_light_pos = v3.fromValues(1.75, 0, 0);
+
+  // some preloaded arrays to optimize memory usage
+  const scale = v3.create();
+  const one = v3.fromValues(1, 1, 1);
+  const initial_light_pos = v3.fromValues(1.75, 0, 0);
   const origin = v4.fromValues(0, 0, 0);
 
   gl.enable(gl.DEPTH_TEST);
@@ -72,7 +77,8 @@ async function main() {
     m4.identity(uniforms.u_projection);
     m4.perspective(uniforms.u_projection, cam.zoom, aspect, 0.1, 100);
     m4.identity(uniforms.u_world);
-    //m4.scale(uniforms.u_world, uniforms.u_world, [10, 10, 10]);
+    v3.scale(scale, one, 10);
+    m4.scale(uniforms.u_world, uniforms.u_world, scale);
 
     // drawing monito
     gl.useProgram(apePrgInf.program);
@@ -91,7 +97,8 @@ async function main() {
       uniforms.u_world,
       uniforms.u_light_position,
     );
-    m4.scale(uniforms.u_world, uniforms.u_world, [0.05, 0.05, 0.05]);
+    v3.scale(scale, one, 0.025);
+    m4.scale(uniforms.u_world, uniforms.u_world, scale);
 
     // drawing the light source cube
     gl.useProgram(lsPrgInf.program);
