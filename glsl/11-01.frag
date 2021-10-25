@@ -25,6 +25,19 @@ uniform vec3 u_lightColor;
 uniform vec3 u_viewPosition; // pov position (camera)
 
 void main() {
-	color = texture(diffuseMap, v_texcoord);
+	vec3 normal = normalize(v_normal);
+	vec4 mapColor = texture(diffuseMap, v_texcoord);
+	vec3 lightDir = normalize(u_lightDirection);
+
+	// ambient light
+	vec3 ambientLight = u_ambientLight * ambient;
+
+	// diffuse light
+	float diffuseFactor = max(dot(normal, lightDir), 0.0);
+	vec3 diffuseLight = diffuseFactor * diffuse;
+
+
+	vec3 result = (ambientLight + diffuseLight) * mapColor.rgb;
+	color = vec4(result, 1.0);
 }
 

@@ -7,6 +7,7 @@ import * as m4 from "./glmjs/mat4.js";
 import * as twgl from "./twgl-full.module.js";
 
 async function main() {
+  const ambientLight = document.querySelector("#ambient");
   const canvitas = document.querySelector("#canvitas");
   const gl = canvitas.getContext("webgl2");
   if (!gl) return undefined !== console.log("couldn't create webgl2 context");
@@ -35,14 +36,6 @@ async function main() {
 
   const world = m4.create();
   const projection = m4.create();
-  const coords = {
-    u_world: world,
-    u_projection: projection,
-    u_view: cam.viewM4,
-  };
-  const light1 = {
-    "u_light_color": v3.fromValues(1, 1, 1),
-  };
 
   // some preloaded arrays to optimize memory usage
   const rotationAxis = new Float32Array([0, 1, 0]);
@@ -51,6 +44,19 @@ async function main() {
   const initial_light_pos = v3.fromValues(1.75, 0, 0);
   const origin = v4.create();
   const light_position = v3.create();
+
+  const coords = {
+    u_world: world,
+    u_projection: projection,
+    u_view: cam.viewM4,
+  };
+  const light0 = {
+    u_lightDirection: light_position,
+    u_ambientLight: v3.create(0),
+  };
+  const light1 = {
+    "u_light_color": v3.fromValues(1, 1, 1),
+  };
 
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
@@ -86,6 +92,7 @@ async function main() {
     // drawing object 1
     gl.useProgram(objPrgInf.program);
     twgl.setUniforms(objPrgInf, coords);
+    twgl.setUniforms(objPrgInf, light0);
 
     for (const { bufferInfo, vao, material } of obj) {
       gl.bindVertexArray(vao);
@@ -122,6 +129,12 @@ async function main() {
   canvitas.addEventListener("mousedown", (e) => cam.startMove(e.x, e.y));
   canvitas.addEventListener("mouseup", () => cam.stopMove());
   canvitas.addEventListener("wheel", (e) => cam.processScroll(e.deltaY));
+  ambientLight.addEventListener("change", (_) => {
+    const value = ambientLight.value;
+    light0.u_ambientLight[0] = value / 100.0;
+    light0.u_ambientLight[1] = value / 100.0;
+    light0.u_ambientLight[2] = value / 100.0;
+  });
 }
 
 main();
