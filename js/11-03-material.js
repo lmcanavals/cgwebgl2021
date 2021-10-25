@@ -13,6 +13,8 @@ async function main() {
   const gl = canvitas.getContext("webgl2");
   if (!gl) return undefined !== console.log("couldn't create webgl2 context");
 
+  let autorotate = true;
+
   twgl.setDefaults({ attribPrefix: "a_" });
 
   // Loading monito
@@ -42,7 +44,7 @@ async function main() {
   const rotationAxis = new Float32Array([0, 1, 0]);
   const temp = v3.create();
   const one = v3.fromValues(1, 1, 1);
-  const initial_light_pos = v3.fromValues(1.5, 0, 0);
+  const initial_light_pos = v3.fromValues(3.0, 0, 0);
   const origin = v4.create();
   const light_position = v3.create();
 
@@ -54,6 +56,7 @@ async function main() {
   const light0 = {
     u_lightPosition: light_position,
     u_ambientLight: v3.create(0),
+    u_viewPosition: cam.pos,
   };
   const light1 = {
     "u_light_color": v3.fromValues(1, 1, 1),
@@ -78,7 +81,8 @@ async function main() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // some logic to move the light around
-    //theta = elapsedTime;
+    if (autorotate) theta += deltaTime;
+    if (theta > Math.PI * 2) theta -= Math.PI * 2;
     m4.identity(world);
     m4.rotate(world, world, theta, rotationAxis);
     m4.translate(world, world, initial_light_pos);
@@ -125,6 +129,7 @@ async function main() {
     else if (e.key === "a") cam.processKeyboard(cg.LEFT, deltaTime);
     else if (e.key === "s") cam.processKeyboard(cg.BACKWARD, deltaTime);
     else if (e.key === "d") cam.processKeyboard(cg.RIGHT, deltaTime);
+    else if (e.key === "r") autorotate = !autorotate;
   });
   canvitas.addEventListener("mousemove", (e) => cam.movePov(e.x, e.y));
   canvitas.addEventListener("mousedown", (e) => cam.startMove(e.x, e.y));

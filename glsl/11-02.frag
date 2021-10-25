@@ -34,7 +34,7 @@ void main() {
 
 	// diffuse light
 	float diffuseFactor = max(dot(normal, lightDir), 0.0);
-	vec3 diffuseLight = diffuseFactor * vec3(1.0, 1.0, 1.0);
+	vec3 diffuseLight = diffuseFactor * diffuse;
 
 
 	vec3 result = (ambientLight + diffuseLight) * mapColor.rgb;
