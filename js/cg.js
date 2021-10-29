@@ -14,7 +14,7 @@ const MAXZOOM = Math.PI / 4.0;
 const MAXPITCH = Math.PI / 2.02;
 
 class Cam {
-  constructor(pos) {
+  constructor(pos, speed=2.5) {
     this.pos = vec3.clone(pos);
     this.up = vec3.clone([0, 1, 0]);
     this.lookAt = vec3.create();
@@ -28,7 +28,7 @@ class Cam {
     this.mouseSensitivity = 0.001;
     this.zoomSensitivity = 0.0005;
 
-    this.speed = 2.5;
+    this.speed = speed;
 
     this.mouseMove = false;
     this.lastX = 0;
