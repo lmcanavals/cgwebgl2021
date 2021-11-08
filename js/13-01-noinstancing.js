@@ -26,7 +26,7 @@ async function main() {
   let aspect = 16.0 / 9.0;
   let deltaTime = 0;
   let lastTime = 0;
-  //let theta = 0;
+  let theta = 0;
 
   const world = m4.create();
   const projection = m4.create();
@@ -36,6 +36,22 @@ async function main() {
     u_projection: projection,
     u_view: cam.viewM4,
   };
+
+  const rotationAxis = new Float32Array([0.0, 1.0, 0.0]);
+  const scale = new Float32Array([0.25, 0.25, 0.25]);
+  let numObjs = 3;
+  let positions = new Array(numObjs * numObjs * numObjs);
+  for (let i = 0; i < numObjs; i++) {
+    for (let j = 0; j < numObjs; j++) {
+      for (let k = 0; k < numObjs; k++) {
+        positions[i * numObjs * numObjs + j * numObjs + k] = [
+          i - numObjs / 2,
+          j - numObjs / 2,
+          k - numObjs / 2,
+        ];
+      }
+    }
+  }
 
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
@@ -62,11 +78,18 @@ async function main() {
     // drawing object 1
     gl.useProgram(objPrgInf.program);
 
-    m4.identity(world);
-    twgl.setUniforms(objPrgInf, coords);
-    for (const { bufferInfo, vao } of obj) {
-      gl.bindVertexArray(vao);
-      twgl.drawBufferInfo(gl, bufferInfo);
+    theta = elapsedTime % (2 * Math.PI);
+
+    for (const position of positions) {
+      m4.identity(world);
+      m4.rotate(world, world, theta, rotationAxis);
+      m4.translate(world, world, position);
+      m4.scale(world, world, scale);
+      twgl.setUniforms(objPrgInf, coords);
+      for (const { bufferInfo, vao } of obj) {
+        gl.bindVertexArray(vao);
+        twgl.drawBufferInfo(gl, bufferInfo);
+      }
     }
 
     requestAnimationFrame(render);
@@ -85,7 +108,19 @@ async function main() {
   canvitas.addEventListener("mouseup", () => cam.stopMove());
   canvitas.addEventListener("wheel", (e) => cam.processScroll(e.deltaY));
   inNumObjs.addEventListener("change", () => {
-    //numObjs = parseInt(inNumObjs.value);
+    numObjs = parseInt(inNumObjs.value);
+    positions = new Array(numObjs * numObjs * numObjs);
+    for (let i = 0; i < numObjs; i++) {
+      for (let j = 0; j < numObjs; j++) {
+        for (let k = 0; k < numObjs; k++) {
+          positions[i * numObjs * numObjs + j * numObjs + k] = [
+            i - numObjs / 2,
+            j - numObjs / 2,
+            k - numObjs / 2,
+          ];
+        }
+      }
+    }
   });
 }
 
