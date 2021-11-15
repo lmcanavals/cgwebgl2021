@@ -334,7 +334,7 @@ async function fetchText(fn) {
   return await resp.text();
 }
 
-async function loadObj(fn, gl, meshProgramInfo) {
+async function loadObj(fn, gl, meshProgramInfo, transforms) {
   const objText = await fetchText(fn);
   const obj = parseObj(objText);
 
@@ -377,7 +377,20 @@ async function loadObj(fn, gl, meshProgramInfo) {
     } else {
       data.color = { value: [1, 1, 1, 1] };
     }
+    if (transforms) {
+      Object.assign(data, {
+        transform: {
+          numComponents: 16,
+          data: transforms,
+          divisor: 1,
+        },
+      })
+    }
     const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
+    
+    const vertexArrayInfo = transforms? 
+      twgl.createVertexArrayInfo(gl, meshProgramInfo, bufferInfo):
+      null;
     const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
     return {
       material: {
@@ -385,6 +398,7 @@ async function loadObj(fn, gl, meshProgramInfo) {
         ...materials[material],
       },
       bufferInfo,
+      vertexArrayInfo,
       vao,
     };
   });
