@@ -14,7 +14,7 @@ const MAXZOOM = Math.PI / 4.0;
 const MAXPITCH = Math.PI / 2.02;
 
 class Cam {
-  constructor(pos, speed=2.5) {
+  constructor(pos, speed = 2.5) {
     this.pos = vec3.clone(pos);
     this.up = vec3.clone([0, 1, 0]);
     this.lookAt = vec3.create();
@@ -382,15 +382,16 @@ async function loadObj(fn, gl, meshProgramInfo, transforms) {
         transform: {
           numComponents: 16,
           data: transforms,
+          drawType: gl.DYNAMIC_DRAW,
           divisor: 1,
         },
-      })
+      });
     }
     const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
-    
-    const vertexArrayInfo = transforms? 
-      twgl.createVertexArrayInfo(gl, meshProgramInfo, bufferInfo):
-      null;
+
+    const vertexArrayInfo = transforms
+      ? twgl.createVertexArrayInfo(gl, meshProgramInfo, bufferInfo)
+      : null;
     const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
     return {
       material: {
